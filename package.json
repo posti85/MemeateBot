@@ -1,0 +1,19 @@
+{
+  "name": "memeate-bot",
+  "version": "0.0.1",
+  "description": "Telegram bot to manage memes made in at",
+  "main": "main.js",
+  "scripts": {
+    "start": "node ."
+  },
+  "keywords": [
+    "memes",
+    "telegram",
+    "bot"
+  ],
+  "author": "Posti",
+  "license": "ISC",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.30.0"
+  }
+}

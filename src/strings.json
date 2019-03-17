@@ -1,0 +1,6 @@
+{
+  "welcome": "¡Bienvenido {0}! Ya eres contribuidor de memes. Usa el comando /nick _<name>_ para configurarte el nombre con el que firmarás tus publicaciones.",
+  "nickCommandFormat": "Debes incluir el nombre detrás del comando. Así: /nick _<name>_",
+  "nickChanged": "¡Genial! El nombre con el que se firmarán tus memes será {0}.",
+  "by": "De "
+}
