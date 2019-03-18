@@ -1,12 +1,12 @@
 const data = require('./data')
 
-const createNewMeme = (author, date) => {
+const createNewMeme = (userId, date) => {
 
   const memes = data.get().memes
 
   return {
     id: memes.length ? memes[memes.length - 1].id + 1 : 1,
-    author,
+    userId,
     date,
     messages: [],
     votes: []
@@ -22,7 +22,7 @@ const saveNewMeme = (meme, callback) => {
 
 const getMemeById = (memeId) => {
 
-  return data.get().memes.find(m => m.id === +memeId)
+  return data.get().memes.find(m => m.id === memeId)
 }
 
 const processUserVote = (meme, user, callback) => {

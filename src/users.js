@@ -1,44 +1,67 @@
 const data = require('./data')
 
-const isAuthorizedUser = (user) => {
+const isAuthorizedUser = (sender) => {
 
-  return Object.keys(data.get().users).includes(user.id.toString())
+  return !!getUserById(sender.id)
 }
 
-const athorizeUser = (user, callback) => {
+const athorizeUser = (sender, callback) => {
 
-  data.get().users[user.id] = user.first_name
+  const storedUser = getUserById(sender.id)
 
-  data.save(callback)
-}
+  if (storedUser) {
 
-const getUserNick = (user) => {
+    callback()
 
-  return data.get().users[user.id]
-}
+  } else {
 
-const setUserNick = (user, nick, callback) => {
+    data.get().users.push({
+      id: sender.id,
+      nickname: sender.first_name
+    })
 
-  data.get().users[user.id] = nick
-
-  data.save(callback)
-}
-
-const getUserIdFromNick = (nick) => {
-
-  const users = data.get().users
-
-  const userId = Object.keys(users).find(userId => users[userId] === nick)
-
-  if (userId) {
-    return +userId
+    data.save(callback)
   }
+}
+
+const getUserNickname = (sender) => {
+
+  const storedUser = getUserById(sender.id)
+
+  if (storedUser) {
+    return storedUser.nickname
+  }
+}
+
+const setUserNickname = (sender, nickname, callback) => {
+
+  const storedUser = getUserById(sender.id)
+
+  if (storedUser) {
+
+    storedUser.nickname = nickname;
+    data.save(callback)
+
+  } else {
+
+    callback(true) // error
+  }
+}
+
+const getUserById = (userId) => {
+
+  return data.get().users.find(user => user.id === userId)
+}
+
+const getUserFromNickname = (nickname) => {
+
+  return data.get().users.find(user => user.nickname === nickname)
 }
 
 module.exports = {
   isAuthorizedUser,
   athorizeUser,
-  getUserNick,
-  setUserNick,
-  getUserIdFromNick
+  getUserNickname,
+  setUserNickname,
+  getUserFromNickname
 }

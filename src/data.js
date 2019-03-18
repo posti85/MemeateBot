@@ -4,7 +4,7 @@ const path = require('path')
 const dataFilePath = path.join(__dirname, '..', 'data.json')
 
 const emptyData = {
-  users: {},
+  users: [],
   memes: []
 }
 

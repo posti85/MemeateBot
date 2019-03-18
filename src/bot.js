@@ -34,7 +34,9 @@ const startBot = () => {
 
   bot = new TelegramBot(config.botToken, { polling: true })
 
-  bot.on('polling_error', () => {}) // Silence polling errors
+  // bot.on('polling_error', () => {}) // Silence polling errors
+
+  bot.on('polling_error', (e) => { console.error(e) })
 
   bot.on('message', onPrivateMessage)
 
@@ -49,7 +51,7 @@ const onPrivateMessage = (message) => {
 
       if (message.text.startsWith('/nick')) {
 
-        processNickChange(message)
+        processNicknameChange(message)
       }
 
     } else if (message.photo || message.document || message.video) {
@@ -65,7 +67,7 @@ const onPrivateMessage = (message) => {
 
 const onMemeVoted = (event) => {
 
-  const meme = memes.getMemeById(event.data)
+  const meme = memes.getMemeById(+event.data)
 
   if (meme) {
 
@@ -77,8 +79,8 @@ const onMemeVoted = (event) => {
       const inlineKeyboard = getMemeInlineKeyboard(meme.id, numVotes)
 
       return bot.editMessageReplyMarkup(inlineKeyboard, {
-        chat_id: message.chatId,
-        message_id: message.messageId
+        message_id: message.id,
+        chat_id: message.chatId
       })
     })
 
@@ -105,20 +107,19 @@ const processUserAuth = (message) => {
 
   users.athorizeUser(message.from, () => {
 
-    sendTextMessage(message, strings.welcome,
-      [users.getUserNick(message.from)])
+    sendTextMessage(message, strings.welcome, [message.from.first_name])
   })
 }
 
-const processNickChange = (message) => {
+const processNicknameChange = (message) => {
 
-  const [ , nick ] = message.text.split(' ', 2)
+  const [ , nickname ] = message.text.split(' ', 2)
 
-  if (nick) {
+  if (nickname) {
 
-    users.setUserNick(message.from, nick, () => {
+    users.setUserNickname(message.from, nickname, () => {
 
-      sendTextMessage(message, strings.nickChanged, [nick])
+      sendTextMessage(message, strings.nickChanged, [nickname])
     })
 
   } else {
@@ -131,15 +132,15 @@ const processMemeForwarding = (message) => {
 
   // To publish in the name of other user
 
-  let userId = message.caption && users.getUserIdFromNick(message.caption) || message.from.id
+  const user = message.caption && users.getUserFromNickname(message.caption) || message.from
 
-  const newMeme = memes.createNewMeme(userId, message.date)
+  const newMeme = memes.createNewMeme(user.id, message.date)
 
   // Prepare all promises the send the meme in all target chats
   let promises = config.targetChats.map((targetChat) => {
 
     const options = {
-      caption: strings.by + users.getUserNick({id: userId}),
+      caption: strings.by + users.getUserNickname(user),
       reply_markup: getMemeInlineKeyboard(newMeme.id)
     }
 
@@ -159,8 +160,8 @@ const processMemeForwarding = (message) => {
   Promise.all(promises).then((messages) => {
 
     newMeme.messages = messages.filter(m => m.chat).map(m => ({
-      chatId: m.chat.id,
-      messageId: m.message_id
+      id: m.message_id,
+      chatId: m.chat.id
     }))
 
     memes.saveNewMeme(newMeme)
@@ -173,7 +174,8 @@ const processMemeForwarding = (message) => {
 
 const sendTextMessage = (receivedMessage, messageText, params = []) => {
 
-  params.forEach((p, i) => messageText = messageText.replace(`{${i}}`, p))
+  params.forEach((p, i) => messageText =
+    messageText.replace(new RegExp(`\\{${i}\\}`, 'g'), p))
 
   bot.sendMessage(receivedMessage.chat.id, messageText, {
     parse_mode: 'Markdown'
