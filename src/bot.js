@@ -1,6 +1,8 @@
 process.env.NTBA_FIX_319 = true
 
 const TelegramBot = require('node-telegram-bot-api')
+const moment = require('moment')
+
 const data = require('./data')
 const users = require('./users')
 const memes = require('./memes')
@@ -45,7 +47,11 @@ const startBot = () => {
 
 const onPrivateMessage = (message) => {
 
-  if (users.isAuthorizedUser(message.from)) {
+  if(message.new_chat_member) {
+
+    processNewChatMember(message)
+
+  } else if (users.isAuthorizedUser(message.from)) {
 
     if (message.text) {
 
@@ -73,8 +79,13 @@ const onMemeVoted = (event) => {
 
     const numVotes = memes.processUserVote(meme, event.from)
 
+    // Do not update expired messages (unless an expired message has been voted)
+
+    const currentChatId = event.message.chat.id
+    const targetMessages = getTargetMessages(currentChatId, meme)
+
     // Prepare all promises to edit memes votes
-    let promises = meme.messages.map((message) => {
+    let promises = targetMessages.map((message) => {
 
       const inlineKeyboard = getMemeInlineKeyboard(meme.id, numVotes)
 
@@ -102,6 +113,20 @@ const onMemeVoted = (event) => {
 //
 // Bot's logic
 //
+
+const processNewChatMember = (message) => {
+
+  const targetChat = config.targetChats.find(c => c.id === message.chat.id)
+
+  if (config.mainChannelInfo && targetChat && targetChat.inviteToMainChannel) {
+
+    sendTextMessage(message, strings.invitationToChannel, [
+      message.new_chat_member.first_name,
+      config.mainChannelInfo.name,
+      config.mainChannelInfo.link
+    ])
+  }
+}
 
 const processUserAuth = (message) => {
 
@@ -145,11 +170,11 @@ const processMemeForwarding = (message) => {
     }
 
     if (message.photo) {
-      return bot.sendPhoto(targetChat, message.photo[0].file_id, options);
+      return bot.sendPhoto(targetChat.id, message.photo[0].file_id, options);
     } if (message.document) {
-      return bot.sendDocument(targetChat, message.document.file_id, options);
+      return bot.sendDocument(targetChat.id, message.document.file_id, options);
     } if (message.video) {
-      return bot.sendVideo(targetChat, message.video.file_id, options);
+      return bot.sendVideo(targetChat.id, message.video.file_id, options);
     }
   })
 
@@ -190,6 +215,27 @@ const getMemeInlineKeyboard = (memeId, numVotes = 0) => {
       callback_data: memeId
     }]],
   }
+}
+
+const getTargetMessages = (currentChatId, meme) => {
+
+  return meme.messages.filter((m) => {
+
+    if (m.chatId === currentChatId) {
+
+      return true
+
+    } else {
+
+      const c = config.targetChats.find(c => c.id === m.chatId)
+
+      if (c && c.expirationDays) {
+        return moment.unix(meme.date).add(c.expirationDays, 'days') > moment()
+      } else {
+        return true
+      }
+    }
+  })
 }
 
 module.exports = {

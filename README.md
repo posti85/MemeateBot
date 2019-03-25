@@ -15,17 +15,34 @@ The `config.json` file must be created in the project root with the following co
 
 ```
 {
-  "botToken": "",
-  "privateChatSecret": "",
-  "targetChats": []
+  "botToken": "string",
+  "privateChatSecret": "string",
+  "mainChannelInfo": {
+    "name": "string",
+    "link": "string"
+  },
+  "targetChats": [
+    {
+      "id": "number"
+    },
+    {
+      "id": "number",
+      "expirationDays": "number",
+      "inviteToMainChannel": "boolean"
+    },
+    ...
+  ]
 }
 ```
 
 Being:
 
-- `botToken`: The Telegram bot token
-- `privateChatSecret`: The secret use to auth bot users
-- `targetChats`: The target chat ids where the memes will be forwarded
+- `botToken`: The Telegram bot token.
+- `privateChatSecret`: The secret use to auth bot users.
+- `mainChannelInfo`: `name` and `link` for the main channel, new chat members will be invited to it.
+- `targetChats`: The target chat ids where the memes will be forwarded.
+Votes in a meme will be updated if no more than `expirationDays` has passed since the meme has been published.
+If `inviteToMainChannel` is set to true, new chat members will be invited to the main channel.
 
 ## Run
 
